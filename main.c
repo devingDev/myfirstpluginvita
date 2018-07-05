@@ -76,6 +76,7 @@ int init_mynetsocket(const char *ip,int port)
 
 static int threadOneFunc(unsigned int args, void* argp)
 {
+	sceKernelDelayThread(1000000);
 	LOG("LOADING NET MODULE");
 	sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
 	LOG("SCENETINITPARAM");
