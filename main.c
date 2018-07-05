@@ -1,43 +1,22 @@
 /*
- *  ShellBat plugin
- *  Copyright (c) 2017 David Rosca
- *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
-
- *  The above copyright notice and this permission notice shall be included in all
- *  copies or substantial portions of the Software.
-
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *  SOFTWARE.
- */
-#include "log.h"
+    coderx3
+*/
 
 #include <psp2/net/net.h>
 #include <psp2/net/netctl.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <psp2/sysmodule.h>
 #include <psp2/kernel/modulemgr.h>
 #include <psp2/kernel/processmgr.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/power.h>
 #include <taihen.h>
+
+#include "log.h"
+
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 static SceUID threadOne;
 int NET_PARAM_MEM_SIZE = 4 * 1024 * 1024;
@@ -46,17 +25,74 @@ static const char SERVER_IP[] = "192.168.178.176";
 static const int SERVER_PORT = 9055;
 static const int NETBUFSIZE = 1024*1024;
 
+static int _mysocket = 0;
+
+
+int socketPrintf(char *text, ...)
+{
+	va_list list;
+	char string[512];
+
+	va_start(list, text);
+	vsprintf(string, text, list);
+	va_end(list);
+
+	return sceNetSend(_mysocket, string, strlen(string), 0);
+}
+
+int init_mynetsocket(const char *ip,int port)
+{
+	LOG("DEFINE NETSIZE");
+	#define NET_INIT_SIZE 1*1024*1024
+	LOG("SCENETSOCKADDRIN");
+	SceNetSockaddrIn server;
+	LOG("SERVERSINLEN");
+	server.sin_len = sizeof(server);
+	LOG("SERVERSINFAMILY");
+	server.sin_family = SCE_NET_AF_INET;
+	
+	LOG("SCENETINETPTON");
+	sceNetInetPton(SCE_NET_AF_INET, ip, &server.sin_addr);
+	LOG("SERVERSINPORT");
+	server.sin_port = sceNetHtons(port);
+	LOG("MEMSETSERVERSINZERO");
+	memset(server.sin_zero, 0, sizeof(server.sin_zero));
+	
+	LOG("_MYSOCKET");
+	_mysocket = sceNetSocket("myplugin", SCE_NET_AF_INET, SCE_NET_SOCK_STREAM, 0);
+	LOG("_MYSOCKET : %X", _mysocket);
+	LOG("SCENETCONNECT");
+	int ret = sceNetConnect(_mysocket, (SceNetSockaddr *)&server, sizeof(server));
+	LOG("RET : %X", ret);
+	if(ret < 0)
+		return ret;
+	else
+	{
+		LOG("SOCKETPRINTF");
+		socketPrintf("Hello from Vita");
+	}
+	return 0;
+}
+
 static int threadOneFunc(unsigned int args, void* argp)
 {
+	LOG("LOADING NET MODULE");
 	sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
+	LOG("SCENETINITPARAM");
 	SceNetInitParam netInitParam;
+	LOG("MEMORY SET");
 	netInitParam.memory = malloc(NET_PARAM_MEM_SIZE);
+	LOG("MEMSET");
 	memset(netInitParam.memory, 0, NET_PARAM_MEM_SIZE);
+	LOG("PARAMSIZE");
 	netInitParam.size = NET_PARAM_MEM_SIZE;
+	LOG("FLAGS");
 	netInitParam.flags = 0;	
+	LOG("SCENETINIT");
 	sceNetInit(&netInitParam);
+	LOG("SCENETCTLINIT");
 	sceNetCtlInit();
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+/*	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd < 0) return 0;
 	struct hostent *server = gethostbyname(SERVER_IP);
 	if(server == NULL){
@@ -76,7 +112,11 @@ static int threadOneFunc(unsigned int args, void* argp)
 	ret = recv(sockfd, buf, NETBUFSIZE, 0);
 
 	close(sockfd);
-
+*/
+	LOG("INIT_MYNETSOCKET");
+	init_mynetsocket(SERVER_IP , SERVER_PORT);
+	
+	LOG("SCESYSMODULEUNLOAD NET");
 	sceSysmoduleUnloadModule(SCE_SYSMODULE_NET);
 	
 	return 0;
@@ -85,18 +125,22 @@ static int threadOneFunc(unsigned int args, void* argp)
 void _start() __attribute__ ((weak, alias ("module_start")));
 int module_start(SceSize argc, const void *args)
 {
-    LOG("Starting module");
-
-
+	LOG("STARTED")
+	LOG("CREATING THREAD");
     threadOne = sceKernelCreateThread("threadOne", &threadOneFunc, 0x40, 1024*1024*4, 0, 0, NULL);
-    sceKernelStartThread(threadOne, 0, NULL);
+	LOG("CREATED THREAD");
+	LOG("STARTING THREAD");
+    threadOne = sceKernelStartThread(threadOne, 0, NULL);
+	LOG("STARTED THREAD");
 
     return SCE_KERNEL_START_SUCCESS;
 }
 
 int module_stop(SceSize argc, const void *args)
 {
-    LOG("Stopping module");
 
+	LOG("ENDED")
+	LOG(" ");
     return SCE_KERNEL_STOP_SUCCESS;
 }
+

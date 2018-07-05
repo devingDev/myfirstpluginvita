@@ -11,8 +11,8 @@ endif()
 project(MyFirstPluginVita)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -Wall -O3 -std=gnu11 -fpermissive")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fpermissive")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -Wall -O3 -std=c99 -fno-strict-aliasing")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions")
 
 include_directories(
 )
@@ -32,15 +32,16 @@ add_executable(myfirstpluginvita
 
 target_link_libraries(myfirstpluginvita
   taihen_stub
-#  k
-  SceLibKernel_stub 
-  SceIofilemgr_stub
   SceSysmodule_stub
+  SceSysmem_stub
   SceNet_stub
   SceNetCtl_stub
-  gcc
-  ScePower_stub
+  SceIofilemgr_stub
+  SceProcessmgr_stub
+  SceLibKernel_stub
+  SceKernelThreadMgr_stub
   SceKernelModulemgr_stub
+  SceLibc_stub
 )
 
 set_target_properties(myfirstpluginvita
@@ -48,6 +49,6 @@ set_target_properties(myfirstpluginvita
 )
 
 vita_create_self(myfirstpluginvita.suprx myfirstpluginvita
-  UNSAFE
   CONFIG ${CMAKE_SOURCE_DIR}/myfirstpluginvita.yml
+  UNSAFE
 )
