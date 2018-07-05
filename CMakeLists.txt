@@ -31,17 +31,16 @@ add_executable(myfirstpluginvita
 )
 
 target_link_libraries(myfirstpluginvita
-  taihen_stub
-  SceSysmodule_stub
-  SceSysmem_stub
-  SceNet_stub
-  SceNetCtl_stub
-  SceIofilemgr_stub
-  SceProcessmgr_stub
-  SceLibKernel_stub
-  SceKernelThreadMgr_stub
-  SceKernelModulemgr_stub
-  SceLibc_stub
+  SceLibc_stub_weak
+  SceNet_stub_weak
+  SceNetCtl_stub_weak
+  SceSysmem_stub_weak
+  SceDisplay_stub_weak
+  SceSysmodule_stub_weak
+  SceIofilemgr_stub_weak
+  SceLibKernel_stub_weak
+  SceKernelThreadMgr_stub_weak
+  SceKernelModulemgr_stub_weak
 )
 
 set_target_properties(myfirstpluginvita

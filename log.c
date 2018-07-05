@@ -28,7 +28,7 @@ void _log(char *str, ...)
 {
     static SceUID logfd = -1;
     if (logfd == -1) {
-        logfd = sceIoOpen("ux0:myfirstplugin.log", SCE_O_APPEND | SCE_O_CREAT | SCE_O_WRONLY, 0666);
+        logfd = sceIoOpen("ux0:data/myfirstplugin.log", SCE_O_APPEND | SCE_O_CREAT | SCE_O_WRONLY, 0666);
     }
     char buff[256];
     va_list arglist;
